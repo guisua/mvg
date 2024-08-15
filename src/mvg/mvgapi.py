@@ -10,15 +10,15 @@ from typing import Any
 import aiohttp
 from furl import furl
 
+import os
+
 MVGAPI_DEFAULT_LIMIT = 100  # API defaults to 10, limits to 100
 
 
 class Base(Enum):
     """MVG APIs base URLs."""
-
-    FIB = "https://mvg.de/api/fib/v3"
-    ZDM = "https://www.mvg.de/.rest/zdm"
-
+    FIB = os.environ.get("MVG_BASE_URL_FIB", "https://beta.mvg.de/api/fib/v3")
+    ZDM = os.environ.get("MVG_BASE_URL_ZM", "https://www.mvg.de/.rest/zdm")
 
 class Endpoint(Enum):
     """MVG API endpoints with URLs and arguments."""
