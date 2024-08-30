@@ -13,6 +13,7 @@ from furl import furl
 import os
 
 MVGAPI_DEFAULT_LIMIT = 100  # API defaults to 10, limits to 100
+from functools import wraps
 
 
 class Base(Enum):
@@ -26,6 +27,7 @@ class Endpoint(Enum):
     FIB_LOCATION: tuple[str, list[str]] = ("/location", ["query"])
     FIB_NEARBY: tuple[str, list[str]] = ("/station/nearby", ["latitude", "longitude"])
     FIB_DEPARTURE: tuple[str, list[str]] = ("/departure", ["globalId", "limit", "offsetInMinutes"])
+    FIB_MESSAGE: tuple[str, list[str]] = ("/message", [])
     ZDM_STATION_IDS: tuple[str, list[str]] = ("/mvgStationGlobalIds", [])
     ZDM_STATIONS: tuple[str, list[str]] = ("/stations", [])
     ZDM_LINES: tuple[str, list[str]] = ("/lines", [])
@@ -55,6 +57,12 @@ class TransportType(Enum):
     def all(cls) -> list[TransportType]:
         """Return a list of all products."""
         return [getattr(TransportType, c.name) for c in cls if c.name != "SEV"]
+    
+class MessageType(Enum):
+    """MVG products defined by the API with name and icon."""
+
+    INCIDENT: tuple[str,] = ("INCIDENT")
+    SCHEDULE_CHANGE: tuple[str,] = ("SCHEDULE_CHANGE")
 
 class Color:
 
@@ -100,6 +108,17 @@ class Color:
 
 class MvgApiError(Exception):
     """Failed communication with MVG API."""
+
+    def safe(func):
+        @wraps(func)
+        def wrapper(*args, **kwargs):
+            try:
+                # Call the decorated function and return its result
+                return func(*args, **kwargs)
+            except Exception as e:
+                # Raise a different exception with a custom message
+                raise RuntimeError(f"An error occurred while executing {func.__name__}: {str(e)}") from e
+        return wrapper
 
 
 class MvgApi:
@@ -241,6 +260,31 @@ class MvgApi:
         :return: a list of lines as dictionary
         """
         return asyncio.run(MvgApi.lines_async())
+    
+    @staticmethod
+    async def messages_async() -> list[dict[str, Any]]:
+        """
+        Retrieve a list of all messages on network disruptions.
+
+        :raises MvgApiError: raised on communication failure or unexpected result
+        :return: a list of messages as dictionary
+        """
+        try:
+            result = await MvgApi.__api(Base.FIB, Endpoint.FIB_MESSAGE)
+            assert isinstance(result, list)
+            return result
+        except (AssertionError, KeyError) as exc:
+            raise MvgApiError("Bad API call: Could not parse station data") from exc
+
+    @staticmethod
+    def messages() -> list[dict[str, Any]]:
+        """
+        Retrieve a list of all messages on network disruptions.
+
+        :raises MvgApiError: raised on communication failure or unexpected result
+        :return: a list of messages as dictionary
+        """
+        return asyncio.run(MvgApi.messages_async())
     
     @staticmethod
     async def station_multi_async(query: str) -> list[dict[str, str]]:
@@ -441,9 +485,9 @@ class MvgApi:
                         "id": location["globalId"],
                         "name": location["name"],
                         "place": location["place"],
-                        "latitude": result[0]["latitude"],
-                        "longitude": result[0]["longitude"],
-                        "types": [TransportType[t].value[0] for t in location_transport_types]
+                        "latitude": location["latitude"],
+                        "longitude": location["longitude"],
+                        "products": [TransportType[t].value[0] for t in location_transport_types]
                     }
                     return_stations.append(station)
 
