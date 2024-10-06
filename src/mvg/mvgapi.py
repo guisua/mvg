@@ -316,8 +316,8 @@ class MvgApi:
                     "id": location["globalId"],
                     "name": location["name"],
                     "place": location["place"],
-                    "latitude": result[0]["latitude"],
-                    "longitude": result[0]["longitude"],
+                    "latitude": location["latitude"],
+                    "longitude": location["longitude"],
                     "products": location["transportTypes"],
                 }
                 for location in result
