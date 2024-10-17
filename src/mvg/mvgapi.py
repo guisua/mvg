@@ -18,10 +18,7 @@ from functools import wraps
 
 class Base(Enum):
     """MVG APIs base URLs."""
-<<<<<<< HEAD
-=======
 
->>>>>>> 4e9cacf650843e8ea549327fa445adb4dfb9143d
     FIB = os.environ.get("MVG_BASE_URL_FIB", "https://mvg.de/api/bgw-pt/v3")
     ZDM = os.environ.get("MVG_BASE_URL_ZM", "https://www.mvg.de/.rest/zdm")
 
