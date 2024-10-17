@@ -18,7 +18,7 @@ from functools import wraps
 
 class Base(Enum):
     """MVG APIs base URLs."""
-    FIB = os.environ.get("MVG_BASE_URL_FIB", "https://beta.mvg.de/api/fib/v3")
+    FIB = os.environ.get("MVG_BASE_URL_FIB", "https://mvg.de/api/bgw-pt/v3")
     ZDM = os.environ.get("MVG_BASE_URL_ZM", "https://www.mvg.de/.rest/zdm")
 
 class Endpoint(Enum):
@@ -28,6 +28,7 @@ class Endpoint(Enum):
     FIB_NEARBY: tuple[str, list[str]] = ("/station/nearby", ["latitude", "longitude"])
     FIB_DEPARTURE: tuple[str, list[str]] = ("/departure", ["globalId", "limit", "offsetInMinutes"])
     FIB_MESSAGE: tuple[str, list[str]] = ("/message", [])
+    FIB_LINES: tuple[str, list[str]] = ("/lines", [])
     ZDM_STATION_IDS: tuple[str, list[str]] = ("/mvgStationGlobalIds", [])
     ZDM_STATIONS: tuple[str, list[str]] = ("/stations", [])
     ZDM_LINES: tuple[str, list[str]] = ("/lines", [])
@@ -245,7 +246,7 @@ class MvgApi:
         :return: a list of lines as dictionary
         """
         try:
-            result = await MvgApi.__api(Base.ZDM, Endpoint.ZDM_LINES)
+            result = await MvgApi.__api(Base.FIB, Endpoint.FIB_LINES)
             assert isinstance(result, list)
             return result
         except (AssertionError, KeyError) as exc:
