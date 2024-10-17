@@ -18,15 +18,20 @@ from functools import wraps
 
 class Base(Enum):
     """MVG APIs base URLs."""
-    FIB = os.environ.get("MVG_BASE_URL_FIB", "https://beta.mvg.de/api/fib/v3")
+
+    FIB = os.environ.get("MVG_BASE_URL_FIB", "https://mvg.de/api/bgw-pt/v3")
     ZDM = os.environ.get("MVG_BASE_URL_ZM", "https://www.mvg.de/.rest/zdm")
+
 
 class Endpoint(Enum):
     """MVG API endpoints with URLs and arguments."""
 
     FIB_LOCATION: tuple[str, list[str]] = ("/location", ["query"])
     FIB_NEARBY: tuple[str, list[str]] = ("/station/nearby", ["latitude", "longitude"])
-    FIB_DEPARTURE: tuple[str, list[str]] = ("/departure", ["globalId", "limit", "offsetInMinutes"])
+    FIB_DEPARTURE: tuple[str, list[str]] = (
+        "/departure",
+        ["globalId", "limit", "offsetInMinutes"],
+    )
     FIB_MESSAGE: tuple[str, list[str]] = ("/message", [])
     ZDM_STATION_IDS: tuple[str, list[str]] = ("/mvgStationGlobalIds", [])
     ZDM_STATIONS: tuple[str, list[str]] = ("/stations", [])
@@ -35,6 +40,7 @@ class Endpoint(Enum):
 
 class Occupancy(Enum):
     """MVG API occupancy level"""
+
     UNKNOWN: tuple[int, str] = (0, "UNKNOWN")
     LOW: tuple[int, str] = (1, "LOW")
     MEDIUM: tuple[int, str] = (2, "MEDIUM")
@@ -57,15 +63,16 @@ class TransportType(Enum):
     def all(cls) -> list[TransportType]:
         """Return a list of all products."""
         return [getattr(TransportType, c.name) for c in cls if c.name != "SEV"]
-    
+
+
 class MessageType(Enum):
     """MVG products defined by the API with name and icon."""
 
-    INCIDENT: tuple[str,] = ("INCIDENT")
-    SCHEDULE_CHANGE: tuple[str,] = ("SCHEDULE_CHANGE")
+    INCIDENT: tuple[str,] = "INCIDENT"
+    SCHEDULE_CHANGE: tuple[str,] = "SCHEDULE_CHANGE"
+
 
 class Color:
-
     @staticmethod
     def background_foreground_colors(transport_type: TransportType, line: str) -> tuple:
         # default to type background color and white foreground
@@ -82,10 +89,8 @@ class Color:
             "S7": "#943126",
             "S8": "#000000",
         }
-        sbahn_line_fg_color_map = {
-            "S8": "#ffcc00"
-        }
-        
+        sbahn_line_fg_color_map = {"S8": "#ffcc00"}
+
         if transport_type == TransportType.SBAHN:
             bg = sbahn_line_bg_color_map.get(line, bg)
             fg = sbahn_line_fg_color_map.get(line, fg)
@@ -98,13 +103,14 @@ class Color:
             "U5": "#d17a08",
             "U6": "#007cc4",
             "U7": "#000000",
-            "U8": "#000000"
+            "U8": "#000000",
         }
 
         if transport_type == TransportType.UBAHN:
             bg = ubahn_line_bg_color_map.get(line, bg)
-        
+
         return bg, fg
+
 
 class MvgApiError(Exception):
     """Failed communication with MVG API."""
@@ -117,7 +123,10 @@ class MvgApiError(Exception):
                 return func(*args, **kwargs)
             except Exception as e:
                 # Raise a different exception with a custom message
-                raise RuntimeError(f"An error occurred while executing {func.__name__}: {str(e)}") from e
+                raise RuntimeError(
+                    f"An error occurred while executing {func.__name__}: {str(e)}"
+                ) from e
+
         return wrapper
 
 
@@ -166,7 +175,12 @@ class MvgApi:
         return True
 
     @staticmethod
-    async def __api(base: Base, endpoint: Endpoint, args: dict[str, Any] | None = None, url_id: str | None = None, ) -> Any:
+    async def __api(
+        base: Base,
+        endpoint: Endpoint,
+        args: dict[str, Any] | None = None,
+        url_id: str | None = None,
+    ) -> Any:
         """
         Call the API endpoint with the given arguments.
 
@@ -188,13 +202,19 @@ class MvgApi:
                     url.url,
                 ) as resp:
                     if resp.status != 200:
-                        raise MvgApiError(f"Bad API call: Got response ({resp.status}) from {url.url}")
+                        raise MvgApiError(
+                            f"Bad API call: Got response ({resp.status}) from {url.url}"
+                        )
                     if resp.content_type != "application/json":
-                        raise MvgApiError(f"Bad API call: Got content type {resp.content_type} from {url.url}")
+                        raise MvgApiError(
+                            f"Bad API call: Got content type {resp.content_type} from {url.url}"
+                        )
                     return await resp.json()
 
         except aiohttp.ClientError as exc:
-            raise MvgApiError(f"Bad API call: Got {str(type(exc))} from {url.url}") from exc
+            raise MvgApiError(
+                f"Bad API call: Got {str(type(exc))} from {url.url}"
+            ) from exc
 
     @staticmethod
     async def station_ids_async() -> list[str]:
@@ -260,7 +280,7 @@ class MvgApi:
         :return: a list of lines as dictionary
         """
         return asyncio.run(MvgApi.lines_async())
-    
+
     @staticmethod
     async def messages_async() -> list[dict[str, Any]]:
         """
@@ -285,7 +305,7 @@ class MvgApi:
         :return: a list of messages as dictionary
         """
         return asyncio.run(MvgApi.messages_async())
-    
+
     @staticmethod
     async def station_multi_async(query: str) -> list[dict[str, str]]:
         """
@@ -316,8 +336,8 @@ class MvgApi:
                     "id": location["globalId"],
                     "name": location["name"],
                     "place": location["place"],
-                    "latitude": result[0]["latitude"],
-                    "longitude": result[0]["longitude"],
+                    "latitude": location["latitude"],
+                    "longitude": location["longitude"],
                     "products": location["transportTypes"],
                 }
                 for location in result
@@ -343,9 +363,7 @@ class MvgApi:
             {'id': 'de:09162:6', 'name': 'Hauptbahnhof', 'place': 'München',
                 'latitude': 48.14003, 'longitude': 11.56107}
         """
-        stations = await MvgApi.station_multi_async(
-            query=query
-        )
+        stations = await MvgApi.station_multi_async(query=query)
 
         if not stations:
             return None
@@ -367,7 +385,7 @@ class MvgApi:
                 'latitude': 48.14003, 'longitude': 11.56107}
         """
         return asyncio.run(MvgApi.station_async(query))
-    
+
     @staticmethod
     async def station_get_async(station_id: str) -> dict[str, str] | None:
         """
@@ -383,7 +401,9 @@ class MvgApi:
                 'latitude': 48.14003, 'longitude': 11.56107}
         """
         try:
-            result = await MvgApi.__api(Base.ZDM, Endpoint.ZDM_STATIONS, url_id=station_id)
+            result = await MvgApi.__api(
+                Base.ZDM, Endpoint.ZDM_STATIONS, url_id=station_id
+            )
             assert isinstance(result, dict)
             return result
         except (AssertionError, KeyError) as exc:
@@ -480,14 +500,21 @@ class MvgApi:
             for location in result:
                 location_transport_types = location["transportTypes"]
 
-                if any([query_type in location_transport_types for query_type in query_transport_types]):
+                if any(
+                    [
+                        query_type in location_transport_types
+                        for query_type in query_transport_types
+                    ]
+                ):
                     station = {
                         "id": location["globalId"],
                         "name": location["name"],
                         "place": location["place"],
                         "latitude": location["latitude"],
                         "longitude": location["longitude"],
-                        "products": [TransportType[t].value[0] for t in location_transport_types]
+                        "products": [
+                            TransportType[t].value[0] for t in location_transport_types
+                        ],
                     }
                     return_stations.append(station)
 
@@ -534,7 +561,7 @@ class MvgApi:
         latitude: float,
         longitude: float,
         transport_types: list[TransportType] | None = None,
-        limit: int = -1
+        limit: int = -1,
     ) -> list[dict[str, str]]:
         """
         Find the nearest station by coordinates.
@@ -566,7 +593,9 @@ class MvgApi:
                 'types': ['Bus']
             }, ...]
         """
-        return asyncio.run(MvgApi.nearby_multi_async(latitude, longitude, transport_types, limit))
+        return asyncio.run(
+            MvgApi.nearby_multi_async(latitude, longitude, transport_types, limit)
+        )
 
     @staticmethod
     async def departures_async(
@@ -605,10 +634,18 @@ class MvgApi:
 
         try:
             args = dict.fromkeys(Endpoint.FIB_LOCATION.value[1])
-            args.update({"globalId": station_id, "offsetInMinutes": offset, "limit": limit})
+            args.update(
+                {"globalId": station_id, "offsetInMinutes": offset, "limit": limit}
+            )
             if transport_types is None:
                 transport_types = TransportType.all()
-            args.update({"transportTypes": ",".join([product.name for product in transport_types])})
+            args.update(
+                {
+                    "transportTypes": ",".join(
+                        [product.name for product in transport_types]
+                    )
+                }
+            )
             result = await MvgApi.__api(Base.FIB, Endpoint.FIB_DEPARTURE, args)
             assert isinstance(result, list)
 
@@ -617,19 +654,29 @@ class MvgApi:
                 # bg, fg = Color.background_foreground_colors(TransportType[departure.get("transportType", "")], departure.get("label", "?"))
                 departures.append(
                     {
-                        "realtimeDepartureTime": int(departure.get("realtimeDepartureTime", 0) / 1000),
-                        "plannedDepartureTime": int(departure.get("plannedDepartureTime", 0) / 1000),
+                        "realtimeDepartureTime": int(
+                            departure.get("realtimeDepartureTime", 0) / 1000
+                        ),
+                        "plannedDepartureTime": int(
+                            departure.get("plannedDepartureTime", 0) / 1000
+                        ),
                         "delay": int(departure.get("delayInMinutes", 0)),
                         "realtime": departure.get("realtime", False),
-                        "transportType": TransportType[departure.get("transportType", "")].value[0],
+                        "transportType": TransportType[
+                            departure.get("transportType", "")
+                        ].value[0],
                         "line": departure.get("label", "?").strip(),
                         "destination": departure.get("destination", "?"),
-                        "icon": TransportType[departure.get("transportType", "")].value[1],
+                        "icon": TransportType[departure.get("transportType", "")].value[
+                            1
+                        ],
                         "platform": departure.get("platform"),
                         "stopPositionNumber": departure.get("stopPositionNumber"),
                         "stopPointGlobalId": departure.get("stopPointGlobalId", ""),
                         "messages": departure.get("messages", []),
-                        "occupancy": Occupancy[departure.get("occupancy", "UNKNOWN")].value[1],
+                        "occupancy": Occupancy[
+                            departure.get("occupancy", "UNKNOWN")
+                        ].value[1],
                         "cancelled": departure.get("cancelled", False),
                         "sev": departure.get("sev", False),
                         "platformChanged": departure.get("platformChanged", False),
@@ -641,7 +688,10 @@ class MvgApi:
             raise MvgApiError("Bad MVG API call: Invalid departure data") from exc
 
     def departures(
-        self, limit: int = MVGAPI_DEFAULT_LIMIT, offset: int = 0, transport_types: list[TransportType] | None = None
+        self,
+        limit: int = MVGAPI_DEFAULT_LIMIT,
+        offset: int = 0,
+        transport_types: list[TransportType] | None = None,
     ) -> list[dict[str, Any]]:
         """
         Retreive the next departures.
@@ -666,4 +716,6 @@ class MvgApi:
             }, ... ]
 
         """
-        return asyncio.run(self.departures_async(self.station_id, limit, offset, transport_types))
+        return asyncio.run(
+            self.departures_async(self.station_id, limit, offset, transport_types)
+        )
