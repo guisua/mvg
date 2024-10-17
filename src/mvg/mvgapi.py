@@ -29,7 +29,7 @@ class Endpoint(Enum):
     FIB_LOCATION: tuple[str, list[str]] = ("/location", ["query"])
     FIB_NEARBY: tuple[str, list[str]] = ("/station/nearby", ["latitude", "longitude"])
     FIB_DEPARTURE: tuple[str, list[str]] = (
-        "/departure",
+        "/departures",
         ["globalId", "limit", "offsetInMinutes"],
     )
     FIB_MESSAGE: tuple[str, list[str]] = ("/message", [])
