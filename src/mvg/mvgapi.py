@@ -26,13 +26,13 @@ class Base(Enum):
 class Endpoint(Enum):
     """MVG API endpoints with URLs and arguments."""
 
-    FIB_LOCATION: tuple[str, list[str]] = ("/location", ["query"])
-    FIB_NEARBY: tuple[str, list[str]] = ("/station/nearby", ["latitude", "longitude"])
+    FIB_LOCATION: tuple[str, list[str]] = ("/locations", ["query"])
+    FIB_NEARBY: tuple[str, list[str]] = ("/stations/nearby", ["latitude", "longitude"])
     FIB_DEPARTURE: tuple[str, list[str]] = (
         "/departures",
         ["globalId", "limit", "offsetInMinutes"],
     )
-    FIB_MESSAGE: tuple[str, list[str]] = ("/message", [])
+    FIB_MESSAGE: tuple[str, list[str]] = ("/messages", [])
     FIB_LINES: tuple[str, list[str]] = ("/lines", [])
     ZDM_STATION_IDS: tuple[str, list[str]] = ("/mvgStationGlobalIds", [])
     ZDM_STATIONS: tuple[str, list[str]] = ("/stations", [])
@@ -634,10 +634,7 @@ class MvgApi:
             raise ValueError("Invalid format of global staton id.")
 
         try:
-            args = dict.fromkeys(Endpoint.FIB_LOCATION.value[1])
-            args.update(
-                {"globalId": station_id, "offsetInMinutes": offset, "limit": limit}
-            )
+            args = {"globalId": station_id, "offsetInMinutes": offset, "limit": limit}
             if transport_types is None:
                 transport_types = TransportType.all()
             args.update(
