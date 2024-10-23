@@ -19,7 +19,7 @@ from functools import wraps
 class Base(Enum):
     """MVG APIs base URLs."""
 
-    FIB = os.environ.get("MVG_BASE_URL_FIB", "https://mvg.de/api/bgw-pt/v3")
+    FIB = os.environ.get("MVG_BASE_URL_FIB", "https://www.mvg.de/api/bgw-pt/v3")
     ZDM = os.environ.get("MVG_BASE_URL_ZM", "https://www.mvg.de/.rest/zdm")
 
 
@@ -630,8 +630,8 @@ class MvgApi:
             }, ... ]
         """
         station_id.strip()
-        if not MvgApi.valid_station_id(station_id):
-            raise ValueError("Invalid format of global staton id.")
+        # if not MvgApi.valid_station_id(station_id):
+        #     raise ValueError("Invalid format of global staton id.")
 
         try:
             args = {"globalId": station_id, "offsetInMinutes": offset, "limit": limit}
@@ -672,6 +672,7 @@ class MvgApi:
                         "stopPositionNumber": departure.get("stopPositionNumber"),
                         "stopPointGlobalId": departure.get("stopPointGlobalId", ""),
                         "messages": departure.get("messages", []),
+                        "infos": departure.get("infos", []),
                         "occupancy": Occupancy[
                             departure.get("occupancy", "UNKNOWN")
                         ].value[1],
