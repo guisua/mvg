@@ -12,8 +12,9 @@ from furl import furl
 
 import os
 
-MVGAPI_DEFAULT_LIMIT = 100  # API defaults to 10, limits to 100
 from functools import wraps
+
+MVGAPI_DEFAULT_LIMIT = 100  # API defaults to 10, limits to 100
 
 
 class Base(Enum):
